@@ -742,6 +742,7 @@
     "error_log_download_success": "Журнал ошибок успешно скачан",
     "request_log_download_title": "Скачать журнал запросов",
     "request_log_download_confirm": "Скачать журнал запросов с идентификатором {{id}}?",
+    "request_log_download_button_hint": "Скачать журнал параметров запроса и ответа",
     "request_log_download_success": "Журнал запросов успешно скачан",
     "empty_title": "Журналы недоступны",
     "empty_desc": "Когда включена опция \"Включить журналирование в файл\", журналы появятся здесь",

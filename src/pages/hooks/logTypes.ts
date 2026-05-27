@@ -8,7 +8,20 @@ export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 export type LogState = {
   buffer: string[];
+  entries: Record<string, StructuredLogEntry>;
   visibleFrom: number;
+};
+
+export type StructuredLogEntry = {
+  line: string;
+  timestamp?: number;
+  request_id?: string;
+  level?: string;
+  status_code?: number;
+  method?: string;
+  path?: string;
+  request_log_download_url?: string;
+  request_log_downloadable?: boolean;
 };
 
 export type ParsedLogLine = {
@@ -22,6 +35,8 @@ export type ParsedLogLine = {
   ip?: string;
   method?: HttpMethod;
   path?: string;
+  requestLogDownloadUrl?: string;
+  requestLogDownloadable?: boolean;
   message: string;
 };
 

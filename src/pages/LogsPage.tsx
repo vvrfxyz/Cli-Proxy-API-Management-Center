@@ -1,5 +1,8 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import type {
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -33,6 +36,7 @@ import {
   STATUS_GROUPS,
   resolveStatusGroup,
   type LogState,
+  type StructuredLogEntry,
 } from './hooks/logTypes';
 import { parseLogLine } from './hooks/logParsing';
 import { useLogFilters } from './hooks/useLogFilters';
@@ -50,6 +54,37 @@ const INITIAL_DISPLAY_LINES = 100;
 const MAX_BUFFER_LINES = 10000;
 const LONG_PRESS_MS = 650;
 const LONG_PRESS_MOVE_THRESHOLD = 10;
+
+const buildEntryMap = (entries: StructuredLogEntry[] | undefined): Record<string, StructuredLogEntry> => {
+  if (!Array.isArray(entries) || entries.length === 0) return {};
+
+  const map: Record<string, StructuredLogEntry> = {};
+  for (const entry of entries) {
+    if (!entry || typeof entry.line !== 'string' || entry.line === '') continue;
+    map[entry.line] = entry;
+  }
+  return map;
+};
+
+const mergeEntryMaps = (
+  current: Record<string, StructuredLogEntry>,
+  next: Record<string, StructuredLogEntry>
+): Record<string, StructuredLogEntry> => {
+  if (Object.keys(next).length === 0) return current;
+  return { ...current, ...next };
+};
+
+const pruneEntryMap = (
+  entries: Record<string, StructuredLogEntry>,
+  buffer: string[]
+): Record<string, StructuredLogEntry> => {
+  const pruned: Record<string, StructuredLogEntry> = {};
+  for (const line of buffer) {
+    const entry = entries[line];
+    if (entry) pruned[line] = entry;
+  }
+  return pruned;
+};
 
 const getErrorMessage = (err: unknown): string => {
   if (err instanceof Error) return err.message;
@@ -71,7 +106,7 @@ export function LogsPage() {
   const requestLogEnabled = config?.requestLog ?? false;
 
   const [activeTab, setActiveTab] = useState<TabType>('logs');
-  const [logState, setLogState] = useState<LogState>({ buffer: [], visibleFrom: 0 });
+  const [logState, setLogState] = useState<LogState>({ buffer: [], entries: {}, visibleFrom: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [autoRefresh, setAutoRefresh] = useLocalStorage('logsPage.autoRefresh', false);
@@ -145,6 +180,7 @@ export function LogsPage() {
       }
 
       const newLines = Array.isArray(data.lines) ? data.lines : [];
+      const newEntries = buildEntryMap(data.entries);
 
       if (incremental && newLines.length > 0) {
         // 增量更新：追加新日志并限制缓冲区大小（避免内存与渲染膨胀）
@@ -160,13 +196,14 @@ export function LogsPage() {
             visibleFrom = Math.max(buffer.length - prevRenderedCount, 0);
           }
 
-          return { buffer, visibleFrom };
+          const entries = pruneEntryMap(mergeEntryMaps(prev.entries, newEntries), buffer);
+          return { buffer, entries, visibleFrom };
         });
       } else if (!incremental) {
         // 全量加载：默认只渲染最后 100 行，向上滚动再展开更多
         const buffer = newLines.slice(-MAX_BUFFER_LINES);
         const visibleFrom = Math.max(buffer.length - INITIAL_DISPLAY_LINES, 0);
-        setLogState({ buffer, visibleFrom });
+        setLogState({ buffer, entries: pruneEntryMap(newEntries, buffer), visibleFrom });
       }
     } catch (err: unknown) {
       console.error('Failed to load logs:', err);
@@ -196,7 +233,7 @@ export function LogsPage() {
       onConfirm: async () => {
         try {
           await logsApi.clearLogs();
-          setLogState({ buffer: [], visibleFrom: 0 });
+          setLogState({ buffer: [], entries: {}, visibleFrom: 0 });
           latestTimestampRef.current = 0;
           showNotification(t('logs.clear_success'), 'success');
         } catch (err: unknown) {
@@ -301,8 +338,8 @@ export function LogsPage() {
       working = working.filter((line) => line.toLowerCase().includes(queryLowered));
     }
 
-    return working.map((line) => parseLogLine(line));
-  }, [baseLines, hideManagementLogs, trimmedSearchQuery]);
+    return working.map((line) => parseLogLine(line, logState.entries[line]));
+  }, [baseLines, hideManagementLogs, logState.entries, trimmedSearchQuery]);
 
   const filters = useLogFilters({ parsedLines: parsedSearchLines });
   const structuredFiltersPanelId = 'logs-structured-filters';
@@ -439,6 +476,16 @@ export function LogsPage() {
     } finally {
       setRequestLogDownloading(false);
     }
+  };
+
+  const handleDownloadRequestLogClick = async (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    id: string
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    cancelLongPress();
+    await downloadRequestLog(id);
   };
 
   useEffect(() => {
@@ -774,11 +821,32 @@ export function LogsPage() {
                             )}
 
                             {line.requestId && (
-                              <span
-                                className={[styles.badge, styles.requestIdBadge].join(' ')}
-                                title={line.requestId}
-                              >
-                                {line.requestId}
+                              <span className={styles.requestLogGroup}>
+                                <span
+                                  className={[styles.badge, styles.requestIdBadge].join(' ')}
+                                  title={line.requestId}
+                                >
+                                  {line.requestId}
+                                </span>
+                                {line.requestLogDownloadable && (
+                                  <button
+                                    type="button"
+                                    className={styles.requestLogDownloadButton}
+                                    onPointerDown={(event) => {
+                                      event.stopPropagation();
+                                      cancelLongPress();
+                                    }}
+                                    onClick={(event) => {
+                                      if (!line.requestId) return;
+                                      void handleDownloadRequestLogClick(event, line.requestId);
+                                    }}
+                                    disabled={requestLogDownloading || !requestLogEnabled}
+                                    title={t('logs.request_log_download_button_hint')}
+                                    aria-label={t('logs.request_log_download_button_hint')}
+                                  >
+                                    <IconDownload size={13} />
+                                  </button>
+                                )}
                               </span>
                             )}
 

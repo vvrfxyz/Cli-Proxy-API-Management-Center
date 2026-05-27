@@ -745,6 +745,7 @@
     "error_log_download_success": "Error log downloaded successfully",
     "request_log_download_title": "Download Request Log",
     "request_log_download_confirm": "Download request log for ID {{id}}?",
+    "request_log_download_button_hint": "Download request and response payload log",
     "request_log_download_success": "Request log downloaded successfully",
     "empty_title": "No Logs Available",
     "empty_desc": "When \"Enable logging to file\" is enabled, logs will be displayed here",

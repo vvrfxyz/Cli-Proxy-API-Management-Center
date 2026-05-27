@@ -771,6 +771,7 @@
     "error_log_download_success": "錯誤記錄下載成功",
     "request_log_download_title": "下載封包",
     "request_log_download_confirm": "是否要下載 id 為 {{id}} 的封包？",
+    "request_log_download_button_hint": "下載請求與回應封包記錄",
     "request_log_download_success": "封包下載成功",
     "empty_title": "暫無記錄",
     "empty_desc": "當啟用「記錄到檔案」功能後，記錄將顯示在這裡",

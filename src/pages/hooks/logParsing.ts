@@ -1,4 +1,10 @@
-import { HTTP_METHODS, type HttpMethod, type LogLevel, type ParsedLogLine } from './logTypes';
+import {
+  HTTP_METHODS,
+  type HttpMethod,
+  type LogLevel,
+  type ParsedLogLine,
+  type StructuredLogEntry,
+} from './logTypes';
 
 const HTTP_METHOD_REGEX = new RegExp(`\\b(${HTTP_METHODS.join('|')})\\b`);
 
@@ -98,7 +104,13 @@ const extractHttpMethodAndPath = (text: string): { method?: HttpMethod; path?: s
   return { method, path };
 };
 
-export const parseLogLine = (raw: string): ParsedLogLine => {
+const isResponsesPath = (path?: string): boolean => {
+  if (!path) return false;
+  const normalized = path.split('?')[0];
+  return normalized === '/v1/responses' || normalized.startsWith('/v1/responses/');
+};
+
+export const parseLogLine = (raw: string, structured?: StructuredLogEntry): ParsedLogLine => {
   let remaining = raw.trim();
 
   let timestamp: string | undefined;
@@ -258,18 +270,30 @@ export const parseLogLine = (raw: string): ParsedLogLine => {
     }
   }
 
+  const structuredRequestId = structured?.request_id;
+  const structuredPath = structured?.path;
+  const structuredMethod = structured?.method as HttpMethod | undefined;
+  const structuredStatusCode = structured?.status_code;
+  const finalRequestId = structuredRequestId || requestId;
+  const finalPath = structuredPath || path;
+  const finalDownloadUrl = structured?.request_log_download_url;
+  const finalDownloadable =
+    Boolean(structured?.request_log_downloadable && finalDownloadUrl) ||
+    Boolean(!structured && finalRequestId && isResponsesPath(finalPath));
+
   return {
     raw,
     timestamp,
     level,
     source,
-    requestId,
-    statusCode,
+    requestId: finalRequestId,
+    statusCode: structuredStatusCode || statusCode,
     latency,
     ip,
-    method,
-    path,
+    method: structuredMethod || method,
+    path: finalPath,
+    requestLogDownloadUrl: finalDownloadUrl,
+    requestLogDownloadable: finalDownloadable,
     message,
   };
 };
-
