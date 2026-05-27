@@ -9,8 +9,21 @@ export interface LogsQuery {
   after?: number;
 }
 
+export interface LogEntry {
+  line: string;
+  timestamp?: number;
+  request_id?: string;
+  level?: string;
+  status_code?: number;
+  method?: string;
+  path?: string;
+  request_log_download_url?: string;
+  request_log_downloadable?: boolean;
+}
+
 export interface LogsResponse {
   lines: string[];
+  entries?: LogEntry[];
   'line-count': number;
   'latest-timestamp': number;
 }

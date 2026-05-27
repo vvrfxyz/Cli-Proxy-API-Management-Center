@@ -530,6 +530,42 @@
   border-color: rgba(8, 145, 178, 0.25);
 }
 
+.requestLogGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.requestLogDownloadButton {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: $radius-full;
+  border: 1px solid rgba(8, 145, 178, 0.25);
+  color: #0891b2;
+  background: rgba(8, 145, 178, 0.08);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(8, 145, 178, 0.16);
+    border-color: rgba(8, 145, 178, 0.42);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
 .statusBadge {
   font-variant-numeric: tabular-nums;
 }

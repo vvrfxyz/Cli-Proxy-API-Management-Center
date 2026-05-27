@@ -745,6 +745,7 @@
     "error_log_download_success": "错误日志下载成功",
     "request_log_download_title": "下载报文",
     "request_log_download_confirm": "是否要下载id为{{id}}的报文？",
+    "request_log_download_button_hint": "下载请求与响应报文日志",
     "request_log_download_success": "报文下载成功",
     "empty_title": "暂无日志记录",
     "empty_desc": "当启用\"日志记录到文件\"功能后，日志将显示在这里",
