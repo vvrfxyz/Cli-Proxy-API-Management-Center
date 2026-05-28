@@ -139,7 +139,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
         <div className={styles.quotaMessage}>{t(`${config.i18nPrefix}.loading`)}</div>
       ) : quotaStatus === 'idle' ? (
         showHeader ? (
-          <div className={styles.quotaMessage}>{t(`${config.i18nPrefix}.idle`)}</div>
+          null
         ) : (
           <button
             type="button"
