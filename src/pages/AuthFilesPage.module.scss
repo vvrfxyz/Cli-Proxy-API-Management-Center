@@ -530,6 +530,56 @@
   border-top: 1px dashed color-mix(in srgb, var(--border-color) 82%, transparent);
 }
 
+.quotaSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  min-width: 0;
+}
+
+.quotaSectionTitle {
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 24px;
+  @include text-ellipsis;
+}
+
+.quotaRefreshButton {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--bg-tertiary) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  cursor: pointer;
+  transition:
+    color $transition-fast,
+    background-color $transition-fast,
+    border-color $transition-fast,
+    transform $transition-fast;
+
+  &:hover:not(:disabled) {
+    color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-secondary));
+    border-color: color-mix(in srgb, var(--primary-color) 28%, var(--border-color));
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
 .quotaRow {
   display: flex;
   flex-direction: column;

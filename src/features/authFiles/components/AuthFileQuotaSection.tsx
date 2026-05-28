@@ -1,6 +1,8 @@
 import { useCallback, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { IconRefreshCw } from '@/components/ui/icons';
 import {
   ANTIGRAVITY_CONFIG,
   CLAUDE_CONFIG,
@@ -35,10 +37,11 @@ export type AuthFileQuotaSectionProps = {
   file: AuthFileItem;
   quotaType: QuotaProviderType;
   disableControls: boolean;
+  showHeader?: boolean;
 };
 
 export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
-  const { file, quotaType, disableControls } = props;
+  const { file, quotaType, disableControls, showHeader = false } = props;
   const { t } = useTranslation();
   const showNotification = useNotificationStore((state) => state.showNotification);
 
@@ -107,6 +110,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
 
   const quotaStatus = quota?.status ?? 'idle';
   const canRefreshQuota = !disableControls && !file.disabled;
+  const isLoadingQuota = quotaStatus === 'loading';
   const quotaErrorMessage = resolveQuotaErrorMessage(
     t,
     quota?.errorStatus,
@@ -115,17 +119,37 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
 
   return (
     <div className={styles.quotaSection}>
+      {showHeader && (
+        <div className={styles.quotaSectionHeader}>
+          <span className={styles.quotaSectionTitle}>{t(`${config.i18nPrefix}.title`)}</span>
+          <button
+            type="button"
+            className={styles.quotaRefreshButton}
+            onClick={() => void refreshQuotaForFile()}
+            disabled={!canRefreshQuota || isLoadingQuota}
+            title={t(`${config.i18nPrefix}.refresh_button`)}
+            aria-label={t(`${config.i18nPrefix}.refresh_button`)}
+          >
+            {isLoadingQuota ? <LoadingSpinner size={14} /> : <IconRefreshCw size={14} />}
+          </button>
+        </div>
+      )}
+
       {quotaStatus === 'loading' ? (
         <div className={styles.quotaMessage}>{t(`${config.i18nPrefix}.loading`)}</div>
       ) : quotaStatus === 'idle' ? (
-        <button
-          type="button"
-          className={`${styles.quotaMessage} ${styles.quotaMessageAction}`}
-          onClick={() => void refreshQuotaForFile()}
-          disabled={!canRefreshQuota}
-        >
-          {t(`${config.i18nPrefix}.idle`)}
-        </button>
+        showHeader ? (
+          <div className={styles.quotaMessage}>{t(`${config.i18nPrefix}.idle`)}</div>
+        ) : (
+          <button
+            type="button"
+            className={`${styles.quotaMessage} ${styles.quotaMessageAction}`}
+            onClick={() => void refreshQuotaForFile()}
+            disabled={!canRefreshQuota}
+          >
+            {t(`${config.i18nPrefix}.idle`)}
+          </button>
+        )
       ) : quotaStatus === 'error' ? (
         <div className={styles.quotaError}>
           {t(`${config.i18nPrefix}.load_failed`, {

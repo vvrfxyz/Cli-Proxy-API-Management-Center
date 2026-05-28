@@ -58,9 +58,13 @@ export type AuthFileCardProps = {
 };
 
 const resolveQuotaType = (file: AuthFileItem): QuotaProviderType | null => {
-  const provider = resolveAuthProvider(file);
-  if (!QUOTA_PROVIDER_TYPES.has(provider as QuotaProviderType)) return null;
-  return provider as QuotaProviderType;
+  const candidates = [file.type, file.provider, resolveAuthProvider(file)]
+    .map((value) => normalizeProviderKey(String(value ?? '')))
+    .filter(Boolean);
+  const match = candidates.find((provider) =>
+    QUOTA_PROVIDER_TYPES.has(provider as QuotaProviderType)
+  );
+  return match ? (match as QuotaProviderType) : null;
 };
 
 export function AuthFileCard(props: AuthFileCardProps) {
@@ -96,8 +100,13 @@ export function AuthFileCard(props: AuthFileCardProps) {
   const typeLabel = getTypeLabel(t, providerKey);
   const providerIcon = getAuthFileIcon(providerKey, resolvedTheme);
 
+  const resolvedQuotaType = resolveQuotaType(file);
   const quotaType =
-    quotaFilterType && resolveQuotaType(file) === quotaFilterType ? quotaFilterType : null;
+    quotaFilterType && resolvedQuotaType === quotaFilterType
+      ? quotaFilterType
+      : resolvedQuotaType === 'codex'
+        ? 'codex'
+        : null;
 
   const showQuotaLayout = Boolean(quotaType) && !isRuntimeOnly && !compact;
 
@@ -256,6 +265,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
                 file={file}
                 quotaType={quotaType}
                 disableControls={disableControls}
+                showHeader={quotaType === 'codex'}
               />
             )}
           </div>
